@@ -1,11 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour {
 
 	Animator anim; //animator dari player
 	Rigidbody2D rigid; //rigidbody 2d dari player
+	
+	public GameObject projectile; //objek peluru
+	public Vector2 projectileVelocity = new Vector2 (50,0); //kecepatan peluru
+	public Vector2 projectileOffset = new Vector2 (0.75f,-0.104f); //jarak posisi peluru dari player
+	public float cooldown = 1f; //jeda waktu untuk menembak	
+	bool isCanShoot = true; //memastikan kondisi kapan bisa menembak
+
+
 
 	public bool isGrounded = false; //untuk menyimpan state apakah karakter berada di ground
 	public bool isFacingRight = true; //untuk mengetahui arah hadap dari player
@@ -23,6 +32,9 @@ public class PlayerController : MonoBehaviour {
 	void Update () {
 		InputHandler();
 		anim.SetInteger("Speed",(int)rigid.velocity.x);
+		if(transform.position.y < -7){
+			SceneManager.LoadScene(0);
+		}
 	}
 
 	void InputHandler(){
@@ -35,6 +47,35 @@ public class PlayerController : MonoBehaviour {
 		if(Input.GetKeyDown(KeyCode.UpArrow) && isGrounded){
 			Jump();
 		}
+		if(Input.GetKeyDown(KeyCode.Space)){
+			Fire();
+		}
+	}
+
+	void Fire(){
+		//jika player dapat menembak
+		if(isCanShoot){
+			anim.SetTrigger("Shoot");
+
+			//membuat projectile baru
+			GameObject bullet = (GameObject)Instantiate(projectile,(Vector2)transform.position
+			+projectileOffset*transform.localScale.x,Quaternion.identity);
+
+			//mengatur kecepatan dari projectile
+			Vector2 velocity = new Vector2(projectileVelocity.x*transform.localScale.x,projectileVelocity.y);
+			bullet.GetComponent<Rigidbody2D>().velocity = velocity;
+
+			//menyesuaikan scale dari projectile dengan scale karakter
+			Vector3 scale = transform.localScale;
+			bullet.transform.localScale = scale;
+			StartCoroutine(CanShoot()); 
+		}
+	}
+
+	IEnumerator CanShoot(){
+		isCanShoot = false;
+		yield return new WaitForSeconds (cooldown);
+		isCanShoot = true;
 	}
 
 	void MoveLeft(){
@@ -72,6 +113,12 @@ public class PlayerController : MonoBehaviour {
 		if(col.gameObject.CompareTag("Ground")){
 			anim.SetBool("IsGrounded",true);
 			isGrounded = true;
+		}
+
+		if(col.gameObject.CompareTag("Enemy")){
+			rigid.velocity = transform.up*5;
+			//transform.GetComponent<BoxCollider2D>().enabled = false;
+			transform.GetComponent<CapsuleCollider2D>().enabled = false;
 		}
 	}
 

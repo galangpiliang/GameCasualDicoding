@@ -11,14 +11,20 @@ public class EnemyController : MonoBehaviour {
 
 	float speed = 2; //kecepatan enemy bergerak
 
+	Rigidbody2D rigid;
+	Animator anim;
+	public int HP=1;
+	bool isDie = false;
+
 	// Use this for initialization
 	void Start () {
-		
+		rigid = GetComponent<Rigidbody2D>();
+		anim = GetComponent<Animator>();		
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		if(isGrounded){
+		if(isGrounded && !isDie){
 			if(isFacingRight)
 				MoveRight();
 			else
@@ -28,6 +34,16 @@ public class EnemyController : MonoBehaviour {
 				Flip();
 			else if(transform.position.x <= batas1.position.x && !isFacingRight)
 				Flip();
+		}
+	}
+
+	public void TakeDamage(int damage){
+		HP -= damage;
+		if(HP <= 0){
+			isDie = true;
+			rigid.velocity = Vector2.zero;
+			anim.SetBool("IsDie",true);
+			Destroy(this.gameObject,2);
 		}
 	}
 
